@@ -1,0 +1,9 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+pydantic==2.10.4
+pillow==11.1.0
+numpy==1.26.4
+# Note for real EfficientDet training and inference on GPU/CPU:
+# tensorflow==2.16.2
+# opencv-python-headless==4.10.0.84

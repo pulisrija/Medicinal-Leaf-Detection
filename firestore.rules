@@ -1,0 +1,162 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity validation helpers
+    function isValidUser(data) {
+      return data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid
+        && data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 120
+        && (!('photoUrl' in data) || (data.photoUrl is string && data.photoUrl.size() <= 500))
+        && (!('totalScans' in data) || (data.totalScans is number && data.totalScans >= 0))
+        && (!('savedPlantsCount' in data) || (data.savedPlantsCount is number && data.savedPlantsCount >= 0));
+    }
+
+    function isValidScan(data) {
+      return data.scanId is string && data.scanId.size() <= 128
+        && data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid
+        && data.plantName is string && data.plantName.size() > 0 && data.plantName.size() <= 100
+        && data.confidence is number && data.confidence >= 0.0 && data.confidence <= 1.0
+        && (!('scientificName' in data) || (data.scientificName is string && data.scientificName.size() <= 100))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000))
+        && (!('previewUrl' in data) || (data.previewUrl is string && data.previewUrl.size() <= 2000));
+    }
+
+    function isValidSavedPlant(data) {
+      return data.savedId is string && data.savedId.size() <= 128
+        && data.userId is string && data.userId.size() <= 128 && data.userId == request.auth.uid
+        && data.plantId is string && data.plantId.size() > 0 && data.plantId.size() <= 64
+        && data.plantName is string && data.plantName.size() > 0 && data.plantName.size() <= 100
+        && (!('scientificName' in data) || (data.scientificName is string && data.scientificName.size() <= 100))
+        && (!('family' in data) || (data.family is string && data.family.size() <= 100))
+        && (!('userNotes' in data) || (data.userNotes is string && data.userNotes.size() <= 1000));
+    }
+
+    function isValidCommunityNote(data) {
+      return data.noteId is string && data.noteId.size() <= 128
+        && data.authorId is string && data.authorId.size() <= 128 && data.authorId == request.auth.uid
+        && data.authorName is string && data.authorName.size() > 0 && data.authorName.size() <= 100
+        && data.plantName is string && data.plantName.size() > 0 && data.plantName.size() <= 100
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 120
+        && data.content is string && data.content.size() > 0 && data.content.size() <= 1000
+        && (!('region' in data) || (data.region is string && data.region.size() <= 100));
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUser(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && incoming().keys().hasAll(['userId', 'displayName', 'email'])
+        && incoming().keys().hasOnly(['userId', 'displayName', 'email', 'photoUrl', 'totalScans', 'savedPlantsCount', 'createdAt', 'updatedAt']);
+      allow update: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUser(incoming())
+        && incoming().updatedAt == request.time
+        && incoming().createdAt == existing().createdAt
+        && incoming().userId == existing().userId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoUrl', 'totalScans', 'savedPlantsCount', 'updatedAt']);
+      allow delete: if isOwner(userId);
+    }
+
+    // Scans Collection
+    match /scans/{scanId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && isValidId(scanId)
+        && isValidScan(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && incoming().keys().hasAll(['scanId', 'userId', 'plantName', 'confidence'])
+        && incoming().keys().hasOnly(['scanId', 'userId', 'plantName', 'scientificName', 'confidence', 'notes', 'previewUrl', 'createdAt', 'updatedAt']);
+      allow update: if isSignedIn()
+        && isValidId(scanId)
+        && existing().userId == request.auth.uid
+        && isValidScan(incoming())
+        && incoming().updatedAt == request.time
+        && incoming().createdAt == existing().createdAt
+        && incoming().userId == existing().userId
+        && incoming().scanId == existing().scanId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['notes', 'updatedAt']);
+      allow delete: if isSignedIn()
+        && isValidId(scanId)
+        && existing().userId == request.auth.uid;
+    }
+
+    // Saved Plants (Personal Herbal Garden)
+    match /saved_plants/{savedId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && isValidId(savedId)
+        && isValidSavedPlant(incoming())
+        && incoming().createdAt == request.time
+        && incoming().keys().hasAll(['savedId', 'userId', 'plantId', 'plantName'])
+        && incoming().keys().hasOnly(['savedId', 'userId', 'plantId', 'plantName', 'scientificName', 'family', 'userNotes', 'createdAt']);
+      allow update: if isSignedIn()
+        && isValidId(savedId)
+        && existing().userId == request.auth.uid
+        && isValidSavedPlant(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().userId == existing().userId
+        && incoming().savedId == existing().savedId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['userNotes']);
+      allow delete: if isSignedIn()
+        && isValidId(savedId)
+        && existing().userId == request.auth.uid;
+    }
+
+    // Community Notes (Field observations & Traditional Remedies)
+    match /community_notes/{noteId} {
+      allow get: if true;
+      allow list: if true;
+      allow create: if isSignedIn()
+        && isValidId(noteId)
+        && isValidCommunityNote(incoming())
+        && incoming().createdAt == request.time
+        && incoming().keys().hasAll(['noteId', 'authorId', 'authorName', 'plantName', 'title', 'content'])
+        && incoming().keys().hasOnly(['noteId', 'authorId', 'authorName', 'plantName', 'title', 'content', 'region', 'createdAt']);
+      allow update: if isSignedIn()
+        && isValidId(noteId)
+        && existing().authorId == request.auth.uid
+        && isValidCommunityNote(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().authorId == existing().authorId
+        && incoming().noteId == existing().noteId
+        && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'content', 'region']);
+      allow delete: if isSignedIn()
+        && isValidId(noteId)
+        && existing().authorId == request.auth.uid;
+    }
+  }
+}

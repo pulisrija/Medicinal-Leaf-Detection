@@ -1,0 +1,216 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile in the medicinal plant research community",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Firebase Auth UID"
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "User display name"
+        },
+        "email": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "User email address"
+        },
+        "photoUrl": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "User avatar photo URL"
+        },
+        "totalScans": {
+          "type": "number",
+          "description": "Total leaf identification scans performed"
+        },
+        "savedPlantsCount": {
+          "type": "number",
+          "description": "Total saved medicinal plants"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when user document was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when user document was last updated"
+        }
+      },
+      "required": ["userId", "displayName", "email"]
+    },
+    "Scan": {
+      "title": "Identification Scan",
+      "description": "Logged medicinal leaf identification scan result with botanical data",
+      "type": "object",
+      "properties": {
+        "scanId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Unique scan identifier"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Firebase Auth UID of the user who performed the scan"
+        },
+        "plantName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Identified common or botanical plant name"
+        },
+        "scientificName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Botanical scientific name"
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Prediction confidence percentage between 0 and 1"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Optional notes or observations recorded by the user"
+        },
+        "previewUrl": {
+          "type": "string",
+          "maxLength": 2000,
+          "description": "Specimen image reference URL or thumbnail"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of scan creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update"
+        }
+      },
+      "required": ["scanId", "userId", "plantName", "confidence"]
+    },
+    "SavedPlant": {
+      "title": "Saved Medicinal Plant",
+      "description": "A bookmarked medicinal plant in the user's personal herbal garden",
+      "type": "object",
+      "properties": {
+        "savedId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Unique bookmark identifier"
+        },
+        "userId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Firebase Auth UID of the user bookmarking the plant"
+        },
+        "plantId": {
+          "type": "string",
+          "maxLength": 64,
+          "description": "Plant identifier reference from catalog"
+        },
+        "plantName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Common plant name"
+        },
+        "scientificName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Botanical Latin name"
+        },
+        "family": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Botanical family"
+        },
+        "userNotes": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Personal preparation notes or usage observations"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of bookmarking"
+        }
+      },
+      "required": ["savedId", "userId", "plantId", "plantName"]
+    },
+    "CommunityNote": {
+      "title": "Community Herbal Note",
+      "description": "Field notes or traditional remedy observations contributed by researchers",
+      "type": "object",
+      "properties": {
+        "noteId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Unique identifier of the community note"
+        },
+        "authorId": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "Auth UID of the note author"
+        },
+        "authorName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Display name of the author"
+        },
+        "plantName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Medicinal plant associated with this note"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 120,
+          "description": "Short summary title of the field note"
+        },
+        "content": {
+          "type": "string",
+          "maxLength": 1000,
+          "description": "Detailed traditional remedy observation or field tip"
+        },
+        "region": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Geographical region or native climate zone"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        }
+      },
+      "required": ["noteId", "authorId", "authorName", "plantName", "title", "content"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents keyed by Auth UID"
+    },
+    "/scans/{scanId}": {
+      "schema": "Scan",
+      "description": "Specimen scan log records keyed by unique scan ID"
+    },
+    "/saved_plants/{savedId}": {
+      "schema": "SavedPlant",
+      "description": "User bookmarked medicinal plants"
+    },
+    "/community_notes/{noteId}": {
+      "schema": "CommunityNote",
+      "description": "Community field notes and traditional remedy observations"
+    }
+  }
+}

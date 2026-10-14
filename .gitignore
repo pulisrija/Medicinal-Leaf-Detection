@@ -1,0 +1,26 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Python & Virtual Environments
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Deep Learning Models & Large Checkpoints
+*.h5
+*.keras
+*.pb
+*.tflite
+checkpoints/
+backend/models/efficientdet_best/variables/
+dataset/
+training_log.csv

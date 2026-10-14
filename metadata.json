@@ -1,0 +1,8 @@
+{
+  "name": "Remix HerbVision AI",
+  "description": "An Intelligent Deep Learning System for Medicinal Plant Classification and Herbal Remedy Recommendation using EfficientDet",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
