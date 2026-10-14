@@ -191,13 +191,66 @@ export class ApiService {
       }
     }
 
-    // 3. Fallback to image visual analysis (inspect image dimensions and aspect)
+    // 3. If leaf cannot be confidently matched to the medicinal dataset:
     if (!selectedPlant) {
-      // Try to determine based on visual aspect ratio if available
-      selectedPlant = PLANTS_DATA[1]; // default to Tulsi (Ocimum tenuiflorum) if unspecified
+      // Leaf is not in the medicinal plant dataset or has no medicinal use
+      const bbox = {
+        x1: 50,
+        y1: 50,
+        x2: 460,
+        y2: 460,
+        width: 410,
+        height: 410
+      };
+
+      const interpretability = {
+        architecture: 'EfficientDet-D0 (BiFPN Multi-Scale Feature Pyramid)',
+        backbone: 'EfficientNet-B0 Pretrained Weights',
+        salient_leaf_features: [
+          { name: 'Marginal Dentation / Cuticular Edge', weight: 0.35, point: [256, 140] as [number, number] },
+          { name: 'General Leaf Venation Pattern', weight: 0.30, point: [256, 256] as [number, number] },
+          { name: 'Laminar Leaf Surface', weight: 0.20, point: [200, 320] as [number, number] },
+          { name: 'Petiole & Basal Region', weight: 0.15, point: [256, 420] as [number, number] }
+        ]
+      };
+
+      return {
+        success: true,
+        is_mock: true,
+        detected: true,
+        is_medicinal: false,
+        is_in_dataset: false,
+        medicinal_status: 'No medicinal use',
+        plant_name: 'No medicinal use',
+        scientific_name: 'Uncataloged specimen / Non-medicinal leaf',
+        confidence: 0.42,
+        threshold: 0.50,
+        bounding_box: bbox,
+        candidate_classes: [
+          { name: 'No medicinal use (Not in dataset)', confidence: 0.42 },
+          { name: 'Unknown / Non-medicinal Flora', confidence: 0.35 },
+          { name: 'Unclassified Foliage', confidence: 0.23 }
+        ],
+        traditional_uses: [
+          'No medicinal use: This leaf is not present in the curated medicinal plant dataset or is not recognized as having documented traditional medicinal value.',
+          'Always consult certified botanists or Ayurvedic healthcare practitioners before using unverified wild leaves.'
+        ],
+        parts_used: ['None documented'],
+        precautions: [
+          'Caution: Do not ingest, brew, or apply leaves of unknown or non-medicinal plants, as wild foliage may contain toxic alkaloids, saponins, or allergens.',
+          'Only consume plants specifically verified by certified botanical experts.'
+        ],
+        traditional_preparations: [],
+        botanical_characteristics: 'Specimen leaf features do not match any of the verified medicinal classes in the EfficientDet dataset.',
+        key_phytochemicals: ['No verified medicinal phytochemical profile'],
+        short_description: 'No medicinal use identified. The uploaded specimen does not match any verified medicinal plant in the system database (such as Neem, Tulsi, Aloe Vera, Moringa, Guava, Curry Leaf, Mint, Hibiscus, Eucalyptus, or Ashoka).',
+        family: 'Unclassified / Non-medicinal',
+        interpretability,
+        source: 'simulator'
+      };
     }
 
-    // High confidence score (0.91 to 0.96)
+    // High confidence score (0.91 to 0.96) for verified dataset specimens
     const confidence = Math.round((0.91 + (imageFile.size % 50) / 1000) * 100) / 100;
 
     // Plausible bounding box tailored to the plant's shape
@@ -242,6 +295,9 @@ export class ApiService {
       success: true,
       is_mock: true,
       detected: true,
+      is_medicinal: true,
+      is_in_dataset: true,
+      medicinal_status: 'Medicinal leaf',
       plant_name: selectedPlant.name,
       scientific_name: selectedPlant.scientific_name,
       confidence,

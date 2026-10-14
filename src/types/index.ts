@@ -51,6 +51,9 @@ export interface PredictionResult {
   confidence: number;
   threshold?: number;
   message?: string;
+  is_medicinal?: boolean;
+  is_in_dataset?: boolean;
+  medicinal_status?: string;
   bounding_box?: BoundingBox | null;
   candidate_classes?: CandidateClass[];
   traditional_uses?: string[];

@@ -530,8 +530,86 @@ export const IdentifyPage: React.FC<IdentifyPageProps> = ({
           {!isLoading && prediction && (
             <div className="space-y-6">
               
-              {/* Check if Confidence is below threshold or not detected */}
-              {(!prediction.success || prediction.confidence < (prediction.threshold || 0.50)) ? (
+              {/* Check if leaf is explicitly non-medicinal or not in dataset */}
+              {prediction.is_medicinal === false || prediction.plant_name === 'No medicinal use' ? (
+                /* Non-Medicinal / Not in Dataset Result Card */
+                <div className="bg-white rounded-xl border border-stone-200 shadow-sm overflow-hidden space-y-6">
+                  {/* Warning Header Banner */}
+                  <div className="bg-stone-800 text-white p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 text-xs font-mono text-amber-300 uppercase tracking-wider mb-1">
+                        <AlertTriangle className="w-4 h-4 text-amber-400" />
+                        <span>Dataset Classification</span>
+                        <span className="text-[10px] bg-amber-950/70 border border-amber-800 text-amber-300 px-1.5 py-0.5 rounded">
+                          Not in Medicinal Dataset
+                        </span>
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white flex items-center gap-2">
+                        No medicinal use
+                      </h2>
+                      <p className="text-sm font-serif italic text-stone-300">
+                        {prediction.scientific_name || 'Uncataloged specimen / Non-medicinal leaf'}
+                      </p>
+                    </div>
+
+                    {/* Status Badge */}
+                    <div className="bg-stone-900 border border-stone-700 rounded-lg p-3 text-right shrink-0">
+                      <div className="text-xs font-mono text-amber-400 uppercase">Medicinal Status</div>
+                      <div className="text-lg font-bold font-mono text-stone-200">
+                        Not Found in Dataset
+                      </div>
+                      <div className="text-[11px] text-stone-400 mt-0.5">
+                        No medicinal properties verified
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Leaf Canvas with Detection Overlay */}
+                  <div className="px-6 space-y-2">
+                    <div className="flex items-center justify-between text-xs text-stone-500">
+                      <span className="font-semibold text-stone-700">Analyzed Leaf Specimen</span>
+                      <span className="font-mono text-amber-700">Classification: No medicinal use</span>
+                    </div>
+                    {previewUrl && (
+                      <BoundingBoxOverlay
+                        imageUrl={previewUrl}
+                        plantName="No medicinal use"
+                        scientificName="Uncataloged specimen"
+                        confidence={prediction.confidence}
+                        boundingBox={prediction.bounding_box}
+                        interpretability={prediction.interpretability}
+                        isMock={prediction.is_mock}
+                      />
+                    )}
+                  </div>
+
+                  {/* Clarification Alert Box */}
+                  <div className="px-6">
+                    <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
+                      <h4 className="text-xs font-bold text-stone-900 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                        <BookOpen className="w-4 h-4 text-stone-600" />
+                        Dataset & Botanical Assessment
+                      </h4>
+                      <p className="text-xs text-stone-700 leading-relaxed">
+                        This leaf photograph does not match any verified specimen in our curated medicinal plant repository (including Neem, Tulsi, Aloe Vera, Moringa, Guava, Curry Leaf, Mint, Hibiscus, Eucalyptus, and Ashoka). It has therefore been classified as having <strong>no medicinal use</strong>.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Precautions for non-medicinal / wild foliage */}
+                  <div className="px-6 pb-6">
+                    <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-xl space-y-2">
+                      <h4 className="text-xs font-bold text-amber-900 uppercase tracking-wider font-mono flex items-center gap-1.5">
+                        <AlertTriangle className="w-4 h-4 text-amber-700" />
+                        Safety Advisory & Consumption Warning
+                      </h4>
+                      <p className="text-xs text-amber-900 leading-relaxed">
+                        Never ingest, infuse, brew, or apply leaves of non-medicinal or uncataloged wild flora. Many wild plants synthesize defense chemicals (such as glycosides, saponins, oxalates, or alkaloids) that may cause irritation, contact dermatitis, or systemic poisoning.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (!prediction.success || prediction.confidence < (prediction.threshold || 0.50)) ? (
                 /* Low Confidence Handling */
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 text-amber-900 space-y-4">
                   <div className="flex items-start gap-3">
@@ -723,21 +801,9 @@ export const IdentifyPage: React.FC<IdentifyPageProps> = ({
                         <div className="flex items-center gap-2">
                           <Database className="w-4 h-4 text-emerald-800" />
                           <h4 className="text-xs font-bold text-emerald-950 uppercase tracking-wider font-mono">
-                            Firebase Cloud Sync & Research Log
+                            Research Log & Observations
                           </h4>
                         </div>
-                        {user ? (
-                          <span className="text-[11px] text-emerald-800 font-medium">
-                            Synced as {user.displayName?.split(' ')[0] || 'User'}
-                          </span>
-                        ) : (
-                          <button
-                            onClick={signInWithGoogle}
-                            className="text-[11px] text-emerald-800 font-semibold hover:underline"
-                          >
-                            Sign in with Google
-                          </button>
-                        )}
                       </div>
 
                       <div className="space-y-2">
@@ -763,34 +829,12 @@ export const IdentifyPage: React.FC<IdentifyPageProps> = ({
                             {scanSavedSuccess ? (
                               <>
                                 <Check className="w-3.5 h-3.5" />
-                                <span>Saved to Firestore Log</span>
+                                <span>Saved to Research Log</span>
                               </>
                             ) : (
                               <>
                                 <Database className="w-3.5 h-3.5" />
-                                <span>{isSavingScan ? 'Saving...' : 'Save Scan to Cloud History'}</span>
-                              </>
-                            )}
-                          </button>
-
-                          <button
-                            onClick={handleBookmarkCurrentPlant}
-                            disabled={isBookmarking || plantBookmarkedSuccess}
-                            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition ${
-                              plantBookmarkedSuccess
-                                ? 'bg-white text-emerald-800 border-emerald-400'
-                                : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-50'
-                            }`}
-                          >
-                            {plantBookmarkedSuccess ? (
-                              <>
-                                <BookmarkCheck className="w-3.5 h-3.5 text-emerald-700" />
-                                <span>In My Herbarium</span>
-                              </>
-                            ) : (
-                              <>
-                                <Bookmark className="w-3.5 h-3.5 text-stone-500" />
-                                <span>{isBookmarking ? 'Saving...' : 'Bookmark Plant'}</span>
+                                <span>{isSavingScan ? 'Saving...' : 'Save Scan to Research Log'}</span>
                               </>
                             )}
                           </button>
